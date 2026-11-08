@@ -1,0 +1,10 @@
+### Create a new member
+POST http://localhost:8080/api/members
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "phone": "0777666555",
+  "plan": "MONTHLY"
+}
