@@ -1,6 +1,7 @@
 
 package com.gymM.gymmanager;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
         import java.util.List;
 
@@ -21,7 +22,7 @@ public class MemberController {
 
     // 2. POST: Send a new member to the database
     @PostMapping("/api/members")
-    public Member addMember(@RequestBody Member member) {
+    public Member addMember(@Valid @RequestBody Member member) {
         return memberRepository.save(member);
     }
 

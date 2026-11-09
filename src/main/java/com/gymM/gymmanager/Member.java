@@ -3,6 +3,7 @@ package com.gymM.gymmanager;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import jakarta.validation.constraints.*;
 
 @Entity
 @Table(name = "members")
@@ -13,14 +14,17 @@ public class Member {
     private Long id;
 
     @Column(name = "first_name", nullable = false)
+    @NotBlank(message = "First name Required")
     private String firstName;
 
     @Column(name = "last_name", nullable = false)
+    @NotBlank(message = "Last name Required")
     private String lastName;
 
     @Column(unique = true)
     private String phone;
 
+    @Email(message = "Incorrect Email")
     private String email;
 
     private String plan;

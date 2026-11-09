@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAZ | Gym Management App</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151f32',
+                            900: '#0f172a',
+                            950: '#090d16',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+<!-- Top Navigation Bar -->
+<header class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <i data-lucide="dumbbell" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <span class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-indigo-400 bg-clip-text text-transparent">KAZ</span>
+                <span class="text-xs block text-slate-400 font-medium tracking-wide">KAZ GYM APP</span>
+            </div>
+        </div>
+
+        <!-- Backend Connection Status Indicator -->
+        <div class="flex items-center space-x-4">
+            <div id="backend-status" class="hidden sm:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700/60 text-xs">
+                <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <span id="status-text" class="text-slate-300 font-medium">Connecting to Backend...</span>
+            </div>
+            <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-medium text-sm flex items-center space-x-2 transition-all shadow-lg shadow-indigo-600/20 active:scale-95">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>Add Member</span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content Container -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
+
+    <!-- Offline / Mock Warning Banner -->
+    <div id="offline-banner" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-amber-500/20 rounded-xl text-amber-400">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h4 class="text-sm font-semibold text-amber-200">Backend Connection Notice</h4>
+                <p class="text-xs text-amber-300/80">Could not reach Spring Boot. Make sure the server is running.</p>
+            </div>
+        </div>
+        <button onclick="toggleMockMode()" id="mock-toggle-btn" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs px-3.5 py-2 rounded-xl transition-all">
+            Enable Demo Mock Mode
+        </button>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Stat 1 -->
+        <div class="bg-slate-900/60 backdrop-blur border border-slate-800/80 rounded-2xl p-5 relative overflow-hidden group hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Members</p>
+                    <h3 id="stat-total" class="text-3xl font-bold text-white tracking-tight">0</h3>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-emerald-400 font-medium">
+                <i data-lucide="trending-up" class="w-3.5 h-3.5 mr-1"></i>
+                <span>Registered in database</span>
+            </div>
+        </div>
+
+        <!-- Stat 2 -->
+        <div class="bg-slate-900/60 backdrop-blur border border-slate-800/80 rounded-2xl p-5 relative overflow-hidden group hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Members</p>
+                    <h3 id="stat-active" class="text-3xl font-bold text-white tracking-tight">0</h3>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                    <i data-lucide="user-check" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-emerald-400 font-medium">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1"></i>
+                <span>Account status active</span>
+            </div>
+        </div>
+
+        <!-- Stat 3 -->
+        <div class="bg-slate-900/60 backdrop-blur border border-slate-800/80 rounded-2xl p-5 relative overflow-hidden group hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Expiring Soon</p>
+                    <h3 id="stat-expiring" class="text-3xl font-bold text-white tracking-tight">0</h3>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                    <i data-lucide="clock" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-amber-400 font-medium">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1"></i>
+                <span>Within 7 days</span>
+            </div>
+        </div>
+
+        <!-- Stat 4 -->
+        <div class="bg-slate-900/60 backdrop-blur border border-slate-800/80 rounded-2xl p-5 relative overflow-hidden group hover:border-slate-700 transition-all">
+            <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Popular Plan</p>
+                    <h3 id="stat-plan" class="text-2xl font-bold text-white tracking-tight truncate max-w-[140px]">Standard</h3>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                    <i data-lucide="award" class="w-6 h-6"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs text-purple-400 font-medium">
+                <i data-lucide="star" class="w-3.5 h-3.5 mr-1"></i>
+                <span>Top tier selection</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Table Section -->
+    <div class="bg-slate-900/80 backdrop-blur border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <!-- Table Header Toolbar -->
+        <div class="p-5 border-b border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3 w-full sm:w-auto">
+                <div class="relative w-full sm:w-80">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </span>
+                    <input type="text" id="search-input" oninput="filterMembers()" placeholder="Search members by name or phone..." class="w-full bg-slate-950 border border-slate-700/60 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <select id="plan-filter" onchange="filterMembers()" class="bg-slate-950 border border-slate-700/60 rounded-xl px-3 py-2.5 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 hidden md:block">
+                    <option value="">All Plans</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Premium">Premium</option>
+                    <option value="VIP">VIP</option>
+                </select>
+            </div>
+
+            <div class="flex items-center space-x-3 w-full sm:w-auto justify-end">
+                <button onclick="fetchMembers()" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all border border-slate-700/60" title="Refresh Table Data">
+                    <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                <tr class="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-950/40">
+                    <th class="py-4 px-6">Member Name</th>
+                    <th class="py-4 px-6">Contact Info</th>
+                    <th class="py-4 px-6">Membership Plan</th>
+                    <th class="py-4 px-6">Start / Expiry</th>
+                    <th class="py-4 px-6">Status</th>
+                    <th class="py-4 px-6 text-right">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="members-table-body" class="divide-y divide-slate-800/60 text-sm">
+                <!-- Populated dynamically via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden py-16 text-center">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
+                <i data-lucide="users" class="w-8 h-8"></i>
+            </div>
+            <h3 class="text-base font-semibold text-slate-300">No members found</h3>
+            <p class="text-sm text-slate-500 mt-1">Get started by adding your first gym member to the database.</p>
+            <button onclick="openModal()" class="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-medium transition-all">Add Member Now</button>
+        </div>
+    </div>
+</main>
+
+<!-- Modal Form (Add / Edit Member) -->
+<div id="member-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-200" id="modal-content">
+        <div class="px-6 py-5 border-b border-slate-800 flex items-center justify-between">
+            <h3 id="modal-title" class="text-lg font-bold text-white">Add New Gym Member</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form id="member-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
+            <input type="hidden" id="member-id">
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">First Name *</label>
+                    <input type="text" id="firstName" required placeholder="John" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Last Name *</label>
+                    <input type="text" id="lastName" required placeholder="Doe" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1.5">Phone Number</label>
+                <input type="tel" id="phone" placeholder="+1 (555) 000-0000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Membership Plan</label>
+                    <select id="plan" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                        <option value="Standard">Standard</option>
+                        <option value="Premium">Premium</option>
+                        <option value="VIP">VIP</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Start Date</label>
+                    <input type="date" id="startDate" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Expiry Date</label>
+                    <input type="date" id="expiryDate" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end space-x-3 border-t border-slate-800">
+                <button type="button" onclick="closeModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl text-sm transition-all">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-sm shadow-lg shadow-indigo-600/30 transition-all">Save Member</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-3 pointer-events-none"></div>
+
+<!-- JavaScript Application Logic -->
+<script>
+    const API_BASE_URL = 'http://localhost:8080/api';
+    let membersData = [];
+    let isMockMode = false;
+
+    // Mock data fallback if Spring Boot is offline
+    const mockMembers = [
+        { id: 1, firstName: 'Sarah', lastName: 'Connor', phone: '+1 555-0192', plan: 'VIP', startDate: '2026-01-01', expiryDate: '2026-12-31', active: true },
+        { id: 2, firstName: 'John', lastName: 'Wick', phone: '+1 555-8372', plan: 'Premium', startDate: '2026-02-10', expiryDate: '2026-03-01', active: true }
+    ];
+
+    // Initialize application on load
+    window.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+        checkBackendHealth();
+        fetchMembers();
+    });
+
+    // 1. Check Spring Boot Health Endpoint
+    async function checkBackendHealth() {
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        const banner = document.getElementById('offline-banner');
+
+        if (isMockMode) {
+            dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400";
+            text.textContent = "Demo Mock Mode Active";
+            banner.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/health`, { signal: AbortSignal.timeout(3000) });
+            if (response.ok) {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-none";
+                text.textContent = "Connected to Spring Boot";
+                banner.classList.add('hidden');
+            } else {
+                throw new Error();
+            }
+        } catch (err) {
+            dot.className = "w-2.5 h-2.5 rounded-full bg-red-500 animate-none";
+            text.textContent = "Backend Offline";
+            banner.classList.remove('hidden');
+        }
+    }
+
+    // Toggle Mock Mode
+    function toggleMockMode() {
+        isMockMode = !isMockMode;
+        const btn = document.getElementById('mock-toggle-btn');
+        if (isMockMode) {
+            btn.textContent = "Disable Mock Mode";
+            membersData = [...mockMembers];
+            renderDashboard();
+            showToast('Switched to Demo Mock Mode', 'info');
+        } else {
+            btn.textContent = "Enable Demo Mock Mode";
+            fetchMembers();
+        }
+        checkBackendHealth();
+    }
+
+    // 2. Fetch Members from Backend
+    async function fetchMembers() {
+        if (isMockMode) {
+            renderDashboard();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/members`);
+            if (!response.ok) throw new Error('Failed to fetch members');
+            membersData = await response.json();
+            renderDashboard();
+            checkBackendHealth();
+        } catch (err) {
+            console.warn('Backend unavailable, falling back to mock UI state.');
+            document.getElementById('offline-banner').classList.remove('hidden');
+            document.getElementById('status-dot').className = "w-2.5 h-2.5 rounded-full bg-red-500";
+            document.getElementById('status-text').textContent = "Backend Offline";
+            if (membersData.length === 0) {
+                membersData = [...mockMembers];
+                renderDashboard();
+            }
+        }
+    }
+
+    // Render Stats and Data Table
+    function renderDashboard() {
+        updateStats();
+        displayMembers(membersData);
+    }
+
+    // Update Stats Cards
+    function updateStats() {
+        const total = membersData.length;
+        const active = membersData.filter(m => m.active !== false).length;
+
+        const today = new Date();
+        const sevenDaysOut = new Date();
+        sevenDaysOut.setDate(today.getDate() + 7);
+
+        const expiring = membersData.filter(m => {
+            if (!m.expiryDate) return false;
+            const expDate = new Date(m.expiryDate);
+            return expDate >= today && expDate <= sevenDaysOut;
+        }).length;
+
+        const planCounts = {};
+        membersData.forEach(m => {
+            const p = m.plan || 'Standard';
+            planCounts[p] = (planCounts[p] || 0) + 1;
+        });
+        let popularPlan = 'Standard';
+        let maxCount = 0;
+        for (const [plan, count] of Object.entries(planCounts)) {
+            if (count > maxCount) {
+                maxCount = count;
+                popularPlan = plan;
+            }
+        }
+
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-active').textContent = active;
+        document.getElementById('stat-expiring').textContent = expiring;
+        document.getElementById('stat-plan').textContent = popularPlan;
+    }
+
+    // Display Members in Table
+    function displayMembers(data) {
+        const tbody = document.getElementById('members-table-body');
+        const emptyState = document.getElementById('empty-state');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            emptyState.classList.remove('hidden');
+            return;
+        } else {
+            emptyState.classList.add('hidden');
+        }
+
+        data.forEach(member => {
+            const initials = `${member.firstName?.[0] || ''}${member.lastName?.[0] || ''}`.toUpperCase();
+            const planColor = member.plan === 'VIP' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                member.plan === 'Premium' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                    'bg-slate-800 text-slate-300 border-slate-700';
+
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-900/50 transition-colors group";
+            tr.innerHTML = `
+                    <td class="py-4 px-6 font-medium text-white flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600/30 to-violet-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-300 text-xs">
+                            ${initials || 'GM'}
+                        </div>
+                        <div>
+                            <div class="font-semibold text-white">${member.firstName || ''} ${member.lastName || ''}</div>
+                            <div class="text-xs text-slate-500">ID: #${member.id || 'NEW'}</div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="text-slate-300 text-sm">${member.phone || 'No phone'}</div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="px-2.5 py-1 rounded-lg border text-xs font-medium ${planColor}">
+                            ${member.plan || 'Standard'}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6 text-xs text-slate-300">
+                        <div>Start: ${member.startDate || 'N/A'}</div>
+                        <div class="text-slate-500">Exp: ${member.expiryDate || 'N/A'}</div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span> Active
+                        </span>
+                    </td>
+                    <td class="py-4 px-6 text-right space-x-1">
+                        <button onclick="editMember(${member.id})" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all" title="Edit Member">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteMember(${member.id})" class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all" title="Delete Member">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+            tbody.appendChild(tr);
+        });
+        lucide.createIcons();
+    }
+
+    // Search & Filter Handler
+    function filterMembers() {
+        const query = document.getElementById('search-input').value.toLowerCase();
+        const planFilter = document.getElementById('plan-filter').value;
+
+        const filtered = membersData.filter(m => {
+            const fullName = `${m.firstName} ${m.lastName}`.toLowerCase();
+            const phone = (m.phone || '').toLowerCase();
+
+            const matchesQuery = fullName.includes(query) || phone.includes(query);
+            const matchesPlan = planFilter === '' || m.plan === planFilter;
+
+            return matchesQuery && matchesPlan;
+        });
+
+        displayMembers(filtered);
+    }
+
+    // Modal Controls
+    function openModal(member = null) {
+        const modal = document.getElementById('member-modal');
+        const content = document.getElementById('modal-content');
+        const title = document.getElementById('modal-title');
+
+        document.getElementById('member-form').reset();
+        document.getElementById('member-id').value = '';
+
+        if (member) {
+            title.textContent = "Edit Member Record";
+            document.getElementById('member-id').value = member.id;
+            document.getElementById('firstName').value = member.firstName || '';
+            document.getElementById('lastName').value = member.lastName || '';
+            document.getElementById('phone').value = member.phone || '';
+            document.getElementById('plan').value = member.plan || 'Standard';
+            document.getElementById('startDate').value = member.startDate || '';
+            document.getElementById('expiryDate').value = member.expiryDate || '';
+        } else {
+            title.textContent = "Add New Gym Member";
+
+            // Automatically set Start Date to Today
+            const today = new Date();
+            document.getElementById('startDate').value = today.toISOString().split('T')[0];
+
+            // Automatically set Expiry Date to 30 days from Today
+            const expiry = new Date();
+            expiry.setDate(today.getDate() + 30);
+            document.getElementById('expiryDate').value = expiry.toISOString().split('T')[0];
+        }
+
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        content.classList.remove('scale-95');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('member-modal');
+        const content = document.getElementById('modal-content');
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        content.classList.add('scale-95');
+    }
+
+    // 3. Handle Create / Update Form Submission
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+
+        const id = document.getElementById('member-id').value;
+        const memberData = {
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            phone: document.getElementById('phone').value,
+            plan: document.getElementById('plan').value,
+            startDate: document.getElementById('startDate').value || null,
+            expiryDate: document.getElementById('expiryDate').value || null,
+            active: true
+        };
+
+        if (isMockMode) {
+            if (id) {
+                const idx = membersData.findIndex(m => m.id == id);
+                if (idx !== -1) membersData[idx] = { ...membersData[idx], ...memberData };
+                showToast('Member updated successfully (Mock Mode)', 'success');
+            } else {
+                const newId = membersData.length > 0 ? Math.max(...membersData.map(m => m.id)) + 1 : 1;
+                membersData.push({ id: newId, ...memberData });
+                showToast('Member created successfully (Mock Mode)', 'success');
+            }
+            closeModal();
+            renderDashboard();
+            return;
+        }
+
+        try {
+            const url = id ? `${API_BASE_URL}/members/${id}` : `${API_BASE_URL}/members`;
+            const method = id ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(memberData)
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.json().catch(() => ({}));
+                throw new Error(errorBody.message || 'Validation failed on server');
+            }
+
+            showToast(id ? 'Member updated successfully!' : 'Member added successfully!', 'success');
+            closeModal();
+            fetchMembers();
+        } catch (err) {
+            showToast(`Error: ${err.message}`, 'error');
+        }
+    }
+
+    // Edit Member Helper
+    function editMember(id) {
+        const member = membersData.find(m => m.id === id);
+        if (member) openModal(member);
+    }
+
+    // 4. Delete Member API Call
+    async function deleteMember(id) {
+        if (!confirm('Are you sure you want to delete this member?')) return;
+
+        if (isMockMode) {
+            membersData = membersData.filter(m => m.id !== id);
+            renderDashboard();
+            showToast('Member deleted successfully (Mock Mode)', 'success');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/members/${id}`, { method: 'DELETE' });
+            if (!response.ok) throw new Error('Failed to delete member');
+
+            showToast('Member deleted successfully', 'success');
+            fetchMembers();
+        } catch (err) {
+            showToast(`Error deleting member: ${err.message}`, 'error');
+        }
+    }
+
+    // Toast Notification System
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+
+        const bgColors = type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' :
+            type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-300' :
+                'bg-indigo-500/10 border-indigo-500/30 text-indigo-300';
+
+        const iconName = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info';
+
+        toast.className = `pointer-events-auto flex items-center space-x-3 px-4 py-3 rounded-2xl border backdrop-blur-md shadow-2xl transition-all transform translate-y-2 opacity-0 ${bgColors}`;
+        toast.innerHTML = `
+                <i data-lucide="${iconName}" class="w-5 h-5 flex-shrink-0"></i>
+                <span class="text-xs font-semibold">${message}</span>
+            `;
+
+        container.appendChild(toast);
+        lucide.createIcons();
+
+        setTimeout(() => {
+            toast.classList.remove('translate-y-2', 'opacity-0');
+        }, 10);
+
+        setTimeout(() => {
+            toast.classList.add('translate-y-2', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+</script>
+</body>
+</html>
